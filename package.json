@@ -1,0 +1,26 @@
+{
+  "name": "leveldb-explorer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "esbuild src/script.js --bundle --outfile=script.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tudmotu/leveldb-explorer.git"
+  },
+  "author": "",
+  "license": "Unlicense",
+  "bugs": {
+    "url": "https://github.com/Tudmotu/leveldb-explorer/issues"
+  },
+  "homepage": "https://github.com/Tudmotu/leveldb-explorer#readme",
+  "devDependencies": {
+    "@ethereumjs/block": "4.1.0",
+    "esbuild": "0.16.10",
+    "http-server": "14.1.1",
+    "rlp": "3.0.0"
+  }
+}
