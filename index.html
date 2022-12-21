@@ -72,9 +72,9 @@
             <h4>Example</h4>
             To find a block hash by its number, you would concatenate the "h"
             prefix (<code>68</code>) and the "n" suffix (<code>6e</code>). Once
-            you find the block hash, you can retrieve its block data.<br>
-            To find the block header data, you would concatenate the "b" prefix
-            (<code>62</code>) with the block number (in hex and padded to 16
+            you find the block hash, you can retrieve its header data.<br>
+            To find the header data, you would concatenate the "h" prefix
+            (<code>68</code>) with the block number (in hex and padded to 16
             digits) and the block hash.<br><br>
 
             Let's take block number 2,505,997 as an example
@@ -91,7 +91,7 @@
                     Then we take the result (<code>9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>) and use the "H"
                     prefix along with the block number and the hash to find the
                     block data:
-                    <code><b>62</b>0000000000263d0d9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>
+                    <code><b>68</b>0000000000263d0d9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>
                 </li>
             </ul>
         </p>
