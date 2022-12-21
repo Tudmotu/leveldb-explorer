@@ -1,0 +1,5 @@
+exclude:
+  - ./README.md
+  - ./LICENSE
+  - ./package-lock.json
+  - ./package.json
