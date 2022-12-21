@@ -3,3 +3,4 @@ exclude:
   - ./LICENSE
   - ./package-lock.json
   - ./package.json
+  - ./src/
