@@ -1,19 +1,25 @@
 <!doctype html>
 <html>
     <head>
+        <script src="./script.js" type="module"></script>
     </head>
-    <body>
+    <body style="margin:0 max(100px, 20%);margin-bottom:300px; font-family:sans-serif;">
         <h1>Ethereum LevelDB Explorer</h1>
         <p>
             The purpose of this tool is to be an educational resource for people
-            trying to learn about Ethereum's data storage. If you ever wondered
-            how Ethereum stores the blockchain, this tool is for you.<br>
+            trying to learn about Ethereum's data storage. This tool assumes
+            deep understanding of how Ethereum's data looks like. If you ever
+            wondered how Ethereum stores this blockchain data, this tool is for
+            you.
+        </p>
+        <p>
             Generally speaking, Ethereum saves all of its data in a simple
             key/value store. But how would you save complex data structures such
-            as blocks and transactions in a key/value store? Ethereum employes
-            several different serialization tatics in order to achieve this. For
-            more information about these data structures, refer to the following
-            resources:
+            as blocks and transactions in a flat key/value store? Ethereum employes
+            several different serialization techniques in order to achieve
+            this.<br>
+            For more information about these data structures, refer to the
+            following resources:
             <ul>
                 <li>
                     <a
@@ -32,11 +38,68 @@
                     </a>
                 </li>
             </ul>
-            This tool works with the Sepolia testnet. To confirm the results you
-            get from this tool, you can cross-check them on <a href="https://sepolia.etherscan.io/" target=_blank>Etherscan</a>.<br>
+            This tool works with the Sepolia testnet, but might not always be
+            fully up-to-date. To confirm the results you get from this tool, you
+            can cross-check them on <a href="https://sepolia.etherscan.io/" target=_blank>Etherscan</a>.<br>
             With this tool you can manually explore the LevelDB data by querying
-            specific keys. It's as low-level as possible, since it's main
-            purpose is educational.
+            specific keys. It's as low-level as possible, since its main
+            purpose is educational.<br>
+            All the data, both keys and values, is saved in a binary format.
+            This tool accepts and responds with hex-encoded binary data.
+        </p>
+        <p>
+            <h3>Cheatsheet for LevelDB keys</h3>
+            Ethereum stores several top-level, mutable values:
+            <ul>
+                <li>LastBlock (in hex: <code>4c617374426c6f636b</code>)</li>
+                <li>LastHeader (in hex: <code>4c617374486561646572</code>)</li>
+                <li>LastFast (in hex: <code>4c61737446617374</code>)</li>
+                <li>DatabaseVersion (in hex: <code>446174616261736556657273696f6e</code>)</li>
+            </ul>
+
+            Other keys are constructed using different prefixes &amp;
+            suffixes. These are:
+            <ul>
+                <li><code>68</code> ("h")</li>
+                <li><code>48</code> ("H")</li>
+                <li><code>6e</code> ("n")</li>
+                <li><code>62</code> ("b")</li>
+                <li><code>74</code> ("t")</li>
+                <li><code>72</code> ("r")</li>
+                <li><code>42</code> ("B")</li>
+            </ul>
+
+            <h4>Example</h4>
+            To find a block hash by its number, you would concatenate the "h"
+            prefix (<code>68</code>) and the "n" suffix (<code>6e</code>). Once
+            you find the block hash, you can retrieve its block data.<br>
+            To find the block header data, you would concatenate the "b" prefix
+            (<code>62</code>) with the block number (in hex and padded to 16
+            digits) and the block hash.<br><br>
+
+            Let's take block number 2,505,997 as an example
+            <ul>
+                <li>
+                    In hex, the number is <code>263d0d</code>. Padded to 16
+                    digits: <code>0000000000263d0d</code>
+                </li>
+                <li>
+                    To find the block hash, we query for
+                    <code><b>68</b>0000000000263d0d<b>6e</b></code>
+                </li>
+                <li>
+                    Then we take the result (<code>9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>) and use the "H"
+                    prefix along with the block number and the hash to find the
+                    block data:
+                    <code><b>62</b>0000000000263d0d9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>
+                </li>
+            </ul>
+        </p>
+        <p>
+            Decoding the results that come from the LevelDB is beyond the scope
+            of this text, but this tool provides several decoders that let you
+            decode the results in different ways. Different values require
+            different decoders &mdash; make sure you use the right decoder.
         </p>
         <main id="notebook">
         </main>
