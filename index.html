@@ -160,8 +160,8 @@
                 <ul>
                     <li>Empty Node (0 items)</li>
                     <li>Branch Node (17 items)</li>
-                    <li>Leaf Node (2 items)</li>
-                    <li>Extension Node (2 items)</li>
+                    <li>Leaf Node (2 items; value starts with <code>2</code> or <code>3</code>)</li>
+                    <li>Extension Node (2 items; value starts with <code>0</code> or <code>1</code>)</li>
                 </ul>
             </p>
             <p>
@@ -175,20 +175,36 @@
                 address as an example:<br>
                 <code>0x3810d4c7eB88dd66ab9bE39A5F567Cf77fF9f8B7</code><br>
                 Its keccak256 value (without the <code>0x</code> part) is:<br>
-                <code>9c8fac36329c5c0b6089b78700f8b1e20ab13182e1abf37c894d174003c5d5db</code><br>
+                <code>acf0daf35759515a3118de4ab5ff63ec27518b94b03d601ac7a1e53b3d6603f8</code><br>
                 We need to traverse the Patricia trie for every character in the
-                hash. We start from <code>9</code> which is the first character
-                in our hash.<br>
-                We take the item in index 9 (10th item) of the root Patricia
-                node, which is:<br>
-                <code>87d63dddcfce8ebdb184b440846dc9833ce26aa29e035b669b6835b0146a6eee</code><br>
+                hash. We start from <code>a</code> which is the first character
+                in our keccak hash.<br>
+                We take the item at index 10 (which is <code>a</code> in hex)
+                of the root Patricia node, which is:<br>
+                <code>c4ee4cf0cab88b6932d7380a6e0efdc33c1d4f0ffa05207f7a1450b45a97972a</code><br>
                 We then query that key to get the next Patricia node. The next
                 patricia node is also a branch node, and so we follow it, taking
                 the key from the <code>c</code> place in the Patricia branch
                 node, which is:<br>
-                <code>1b38ff675fa5438b7f183c5fa0625e33451db78c7cbac753a72d100e277519a3</code><br>
-                We keep traversing this way, <code>9</code>, <code>c</code>,
-                <code>8</code>, <code>f</code>, <code>a</code>, etc.
+                <code>51f41878a482a7e1a60e91b8e5c66333d119339dc067363b681ad7f7e6581c39</code><br>
+                We keep traversing this way, <code>f</code>, <code>0</code>,
+                <code>d</code>.<br>
+                At this point, we get the next node's <b>key</b>:<br>
+                <code>8b97f78fa20cfba908a4953654b4fcdc55c94a3df3305548e1e16eb549c19672</code><br>
+                When we query this key, we get a <b>Leaf node</b>. We can
+                identify it because its value starts with <code>3</code>. This
+                type of node is built of two items: the rest of our "path" and
+                the final <b>value</b> of our account.<br>
+                If we take the first item of this node and remove the
+                <code>3</code>, we get:<br>
+                <code>af35759515a3118de4ab5ff63ec27518b94b03d601ac7a1e53b3d6603f8</code><br>
+                If this string seems familiar, it's because it's part of the
+                hash that we were searching for:<br>
+                <code>acf0d<code>af35759515a3118de4ab5ff63ec27518b94b03d601ac7a1e53b3d6603f8</code></code><br>
+                We traversed through <code>f</code>, <code>0</code>,
+                <code>f</code>, <code>0</code>, <code>d</code>, to get to this
+                node, which contains the rest of our hash and our desired value
+                - RLP-encoded account data.
             </p>
         </details>
         <main id="notebook">

@@ -362,6 +362,25 @@
       this.elements.decodeLeafNode.addEventListener("click", async () => {
         fromRlpToObject(["path", "value"]);
       });
+      this.elements.decodeAccountNode.addEventListener("click", async () => {
+        const result = rlp();
+        const value = result[1];
+        const buf = bufferFromHex(value);
+        const decoded = import_rlp2.default.decode(buf);
+        const account = arrToJSON(decoded);
+        const data = {
+          key: result[0],
+          rawValue: value,
+          rlpDecodedValue: account,
+          accountDetails: {
+            nonce: account[0],
+            balance: account[1],
+            storageRoot: account[2],
+            codeHash: account[3]
+          }
+        };
+        this.elements.decodedValue.textContent = JSON.stringify(data, null, 4);
+      });
     }
   };
   var NotebookCell = _NotebookCell;
@@ -378,6 +397,7 @@
             <button data-el="decodeBranchNode">Patricia Branch Node</button>
             <button data-el="decodeExtensionNode">Patricia Extension Node</button>
             <button data-el="decodeLeafNode">Patricia Leaf Node</button>
+            <button data-el="decodeAccountNode">Account Leaf Node</button>
         </div>
         <pre data-el="decodedValue" style="white-space:pre-wrap;word-break:break-all"></pre>
     `);
