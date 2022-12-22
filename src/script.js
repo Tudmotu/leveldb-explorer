@@ -12,15 +12,23 @@ class NotebookCell {
             <span>Decode:</span>
             <button data-el="decodeRLP">RLP</button>
             <button data-el="decodeBlockHeader">Block Header JSON from RLP</button>
+            <button data-el="decodeBranchNode">Patricia Branch Node</button>
+            <button data-el="decodeExtensionNode">Patricia Extension Node</button>
+            <button data-el="decodeLeafNode">Patricia Leaf Node</button>
         </div>
         <pre data-el="decodedValue" style="white-space:pre-wrap;word-break:break-all"></pre>
     `;
 
     constructor () {
         this.element = document.createElement('div');
+        this.element.classList.add('cell');
         this.element.innerHTML = NotebookCell.template;
         this.mapElements();
         this.setupEvents();
+    }
+
+    onInitialResult (fn) {
+        this._resultCb = fn;
     }
 
     mapElements () {
@@ -39,6 +47,10 @@ class NotebookCell {
             const value = response.blobValue ?? response.value;
             this.elements.value.textContent = value;
             this.elements.decodedValue.textContent = '';
+            if (this._resultCbInvoked !== true) {
+                this._resultCbInvoked = true;
+                this._resultCb();
+            }
         });
 
         const rlp = () => {
@@ -53,12 +65,7 @@ class NotebookCell {
             this.elements.decodedValue.textContent = JSON.stringify(rlp());
         });
 
-        this.elements.decodeBlockHeader.addEventListener('click', async () => {
-            const keys = [
-                'parentHash', 'ommersHash', 'beneficiary', 'stateRoot', 'transactionRoot',
-                'receiptsRoot', 'logsBloom', 'difficulty', 'number', 'gasLimit', 'gasUsed',
-                'timestamp', 'extraData', 'mixHash', 'nonce'
-            ];
+        const fromRlpToObject = (keys) => {
             const values = rlp();
             const data = {};
 
@@ -67,11 +74,42 @@ class NotebookCell {
             }
 
             this.elements.decodedValue.textContent = JSON.stringify(data, null, 4);
+        }
+
+        this.elements.decodeBlockHeader.addEventListener('click', async () => {
+            fromRlpToObject([
+                'parentHash', 'ommersHash', 'beneficiary', 'stateRoot', 'transactionRoot',
+                'receiptsRoot', 'logsBloom', 'difficulty', 'number', 'gasLimit', 'gasUsed',
+                'timestamp', 'extraData', 'mixHash', 'nonce'
+            ]);
+        });
+
+        this.elements.decodeBranchNode.addEventListener('click', async () => {
+            fromRlpToObject([
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c',
+                'd', 'e', 'f', 'value'
+            ]);
+        });
+
+        this.elements.decodeExtensionNode.addEventListener('click', async () => {
+            fromRlpToObject(['path', 'nextKey']);
+        });
+
+        this.elements.decodeLeafNode.addEventListener('click', async () => {
+            fromRlpToObject(['path', 'value']);
         });
     }
 }
 
-const notebook = document.getElementById('notebook');
-const notebookCell = new NotebookCell();
+createCell(document.getElementById('notebook'));
 
-notebook.appendChild(notebookCell.element);
+function createCell (notebook) {
+    const notebookCell = new NotebookCell();
+
+    notebookCell.onInitialResult(() => {
+        createCell(notebook);
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    notebook.appendChild(notebookCell.element);
+}

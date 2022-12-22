@@ -2,105 +2,195 @@
 <html>
     <head>
         <script src="./script.js" type="module"></script>
+        <style>
+            code {
+                background:#ddd;
+                padding:0 4px;
+                border-radius:.5em;
+            }
+            .cell {
+                padding: 1em;
+                border: solid 1px #aaa;
+                margin: 2rem 0;
+            }
+        </style>
     </head>
     <body style="margin:0 max(100px, 20%);margin-bottom:300px; font-family:sans-serif;">
         <h1>Ethereum LevelDB Explorer</h1>
-        <p>
-            The purpose of this tool is to be an educational resource for people
-            trying to learn about Ethereum's data storage. This tool assumes
-            deep understanding of how Ethereum's data looks like. If you ever
-            wondered how Ethereum stores this blockchain data, this tool is for
-            you.
-        </p>
-        <p>
-            Generally speaking, Ethereum saves all of its data in a simple
-            key/value store. But how would you save complex data structures such
-            as blocks and transactions in a flat key/value store? Ethereum employes
-            several different serialization techniques in order to achieve
-            this.<br>
-            For more information about these data structures, refer to the
-            following resources:
-            <ul>
-                <li>
-                    <a
-                        href="https://medium.com/coinmonks/data-structure-in-ethereum-episode-4-diving-by-examples-f6a4cbd8c329" target=_blank>
-                        Data structure in Ethereum | Episode 4: Diving into examples
-                    </a>
-                </li>
-                <li>
-                    <a href="https://ethereum.stackexchange.com/questions/57883/how-the-blocks-and-tries-are-stored" target=_blank>
-                        How the blocks and tries are stored, Ethereum StackExchange
-                    </a>
-                </li>
-                <li>
-                    <a href="https://etherworld.co/2019/02/06/reading-ethereum-geth-database-leveldb/" target=_blank>
-                        Reading Ethereum Geth database (LEVELDB)
-                    </a>
-                </li>
-            </ul>
-            This tool works with the Sepolia testnet, but might not always be
-            fully up-to-date. To confirm the results you get from this tool, you
-            can cross-check them on <a href="https://sepolia.etherscan.io/" target=_blank>Etherscan</a>.<br>
-            With this tool you can manually explore the LevelDB data by querying
-            specific keys. It's as low-level as possible, since its main
-            purpose is educational.<br>
-            All the data, both keys and values, is saved in a binary format.
-            This tool accepts and responds with hex-encoded binary data.
-        </p>
-        <p>
-            <h3>Cheatsheet for LevelDB keys</h3>
-            Ethereum stores several top-level, mutable values:
-            <ul>
-                <li>LastBlock (in hex: <code>4c617374426c6f636b</code>)</li>
-                <li>LastHeader (in hex: <code>4c617374486561646572</code>)</li>
-                <li>LastFast (in hex: <code>4c61737446617374</code>)</li>
-                <li>DatabaseVersion (in hex: <code>446174616261736556657273696f6e</code>)</li>
-            </ul>
+        <details>
+            <summary>Intro</summary>
+            <p>
+                The purpose of this tool is to be an educational resource for people
+                trying to learn about Ethereum's data storage. This tool assumes
+                deep understanding of how Ethereum's data looks like. If you ever
+                wondered how Ethereum stores this blockchain data, this tool is for
+                you.
+            </p>
+            <p>
+                Generally speaking, Ethereum saves all of its data in a simple
+                key/value store. But how would you save complex data structures such
+                as blocks and transactions in a flat key/value store? Ethereum employes
+                several different serialization techniques in order to achieve
+                this.<br>
+                For more information about these data structures, refer to the
+                following resources:
+                <ul>
+                    <li>
+                        <a
+                            href="https://medium.com/coinmonks/data-structure-in-ethereum-episode-4-diving-by-examples-f6a4cbd8c329" target=_blank>
+                            Data structure in Ethereum | Episode 4: Diving into examples
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://ethereum.stackexchange.com/questions/57883/how-the-blocks-and-tries-are-stored" target=_blank>
+                            How the blocks and tries are stored, Ethereum StackExchange
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://etherworld.co/2019/02/06/reading-ethereum-geth-database-leveldb/" target=_blank>
+                            Reading Ethereum Geth database (LEVELDB)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://medium.com/shyft-network/understanding-trie-databases-in-ethereum-9f03d2c3325d" target=_blank>
+                            Understanding Trie Databases in Ethereum
+                        </a>
+                    </li>
+                </ul>
+                This tool works with the Sepolia testnet, but might not always be
+                fully up-to-date. To confirm the results you get from this tool, you
+                can cross-check them on <a href="https://sepolia.etherscan.io/" target=_blank>Etherscan</a>.<br>
+                With this tool you can manually explore the LevelDB data by querying
+                specific keys. It's as low-level as possible, since its main
+                purpose is educational.<br>
+                All the data, both keys and values, is saved in a binary format.
+                This tool accepts and responds with hex-encoded binary data.
+            </p>
+        </details>
+        <details>
+            <summary>Retrieving Block Data</summary>
+            <p>
+                Ethereum stores several top-level, mutable values:
+                <ul>
+                    <li>LastBlock (in hex: <code>4c617374426c6f636b</code>)</li>
+                    <li>LastHeader (in hex: <code>4c617374486561646572</code>)</li>
+                    <li>LastFast (in hex: <code>4c61737446617374</code>)</li>
+                    <li>DatabaseVersion (in hex: <code>446174616261736556657273696f6e</code>)</li>
+                </ul>
 
-            Other keys are constructed using different prefixes &amp;
-            suffixes. These are:
-            <ul>
-                <li><code>68</code> ("h")</li>
-                <li><code>48</code> ("H")</li>
-                <li><code>6e</code> ("n")</li>
-                <li><code>62</code> ("b")</li>
-                <li><code>74</code> ("t")</li>
-                <li><code>72</code> ("r")</li>
-                <li><code>42</code> ("B")</li>
-            </ul>
+                Other keys are constructed using different prefixes &amp;
+                suffixes. These are:
+                <ul>
+                    <li><code>68</code> ("h")</li>
+                    <li><code>48</code> ("H")</li>
+                    <li><code>6e</code> ("n")</li>
+                    <li><code>62</code> ("b")</li>
+                    <li><code>74</code> ("t")</li>
+                    <li><code>72</code> ("r")</li>
+                    <li><code>42</code> ("B")</li>
+                </ul>
 
+                <h4>Example</h4>
+                To find a block hash by its number, you would concatenate the "h"
+                prefix (<code>68</code>) and the "n" suffix (<code>6e</code>). Once
+                you find the block hash, you can retrieve its header data.<br>
+                To find the header data, you would concatenate the "h" prefix
+                (<code>68</code>) with the block number (in hex and padded to 16
+                digits) and the block hash.<br><br>
+
+                Let's take block number 2,505,997 as an example
+                <ul>
+                    <li>
+                        In hex, the number is <code>263d0d</code>. Padded to 16
+                        digits: <code>0000000000263d0d</code>
+                    </li>
+                    <li>
+                        To find the block hash, we query for
+                        <code><b>68</b>0000000000263d0d<b>6e</b></code>
+                    </li>
+                    <li>
+                        Then we take the result (<code>9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>) and use the "H"
+                        prefix along with the block number and the hash to find the
+                        block data:
+                        <code><b>68</b>0000000000263d0d9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>
+                    </li>
+                </ul>
+            </p>
+            <p>
+                Decoding the results that come from the LevelDB is beyond the scope
+                of this text, but this tool provides several decoders that let you
+                decode the results in different ways. Different values require
+                different decoders &mdash; make sure you use the right decoder.
+            </p>
+        </details>
+        <details>
+            <summary>Traversing the Tries</summary>
+            <p>
+                Ethereum uses two kinds of tries to save data in a cryptographically
+                secure yet efficient way:
+                <ul>
+                    <li>Modified Patricia Trie</li>
+                    <li>Merkle Trie</li>
+                </ul>
+                Explaining these trie structures is beyond the scope of this
+                tool.
+            </p>
+            <p>
+                These two tries can be constructed from the key/value pairs in the
+                DB. The <b>keys</b> in the DB are part of the Merkle trie, while the
+                <b>values</b> are part of the Patricia trie.<br>
+                Generally speaking, if you are trying to retrieve raw data, you need
+                to construct the Patricia trie from the values, but if you are
+                trying to validate the data, you need to construct the Merkle trie
+                from the keys.
+            </p>
             <h4>Example</h4>
-            To find a block hash by its number, you would concatenate the "h"
-            prefix (<code>68</code>) and the "n" suffix (<code>6e</code>). Once
-            you find the block hash, you can retrieve its header data.<br>
-            To find the header data, you would concatenate the "h" prefix
-            (<code>68</code>) with the block number (in hex and padded to 16
-            digits) and the block hash.<br><br>
-
-            Let's take block number 2,505,997 as an example
-            <ul>
-                <li>
-                    In hex, the number is <code>263d0d</code>. Padded to 16
-                    digits: <code>0000000000263d0d</code>
-                </li>
-                <li>
-                    To find the block hash, we query for
-                    <code><b>68</b>0000000000263d0d<b>6e</b></code>
-                </li>
-                <li>
-                    Then we take the result (<code>9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>) and use the "H"
-                    prefix along with the block number and the hash to find the
-                    block data:
-                    <code><b>68</b>0000000000263d0d9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>
-                </li>
-            </ul>
-        </p>
-        <p>
-            Decoding the results that come from the LevelDB is beyond the scope
-            of this text, but this tool provides several decoders that let you
-            decode the results in different ways. Different values require
-            different decoders &mdash; make sure you use the right decoder.
-        </p>
+            <p>
+                Let's take block 2,500,039 (<code>2625c7</code> in hex). We can
+                get the hash and header data as explained above. From the header
+                we can extract the <code>stateRoot</code>, which is:<br>
+                <code>644ae129f630e6c5c864b2dbd634c50fe479d631ef76ae1e9ceb5220bca949c5</code>
+            </p>
+            <p>
+                The <code>stateRoot</code> is the <b>key</b> for our root nodes.
+                The value of this key in the DB is the root Patricia node, while
+                the key itself is the root Merkle node.<br>
+                Querying this key will give us an RLP-encoded value that
+                represents 1 of 4 kinds of Patricia nodes:
+                <ul>
+                    <li>Empty Node (0 items)</li>
+                    <li>Branch Node (17 items)</li>
+                    <li>Leaf Node (2 items)</li>
+                    <li>Extension Node (2 items)</li>
+                </ul>
+            </p>
+            <p>
+                Querying for our block's <code>stateRoot</code> gives us a
+                17-item long <b>branch node</b>. Each item in the branch node
+                represents a hex character from <code>0</code> to
+                <code>f</code>.<br>
+                In order to find the balance of an account in the State Trie, we
+                need to traverse the Patricia trie following the keccak256 hash
+                of the address we want to query. Let's take the following
+                address as an example:<br>
+                <code>0x3810d4c7eB88dd66ab9bE39A5F567Cf77fF9f8B7</code><br>
+                Its keccak256 value (without the <code>0x</code> part) is:<br>
+                <code>9c8fac36329c5c0b6089b78700f8b1e20ab13182e1abf37c894d174003c5d5db</code><br>
+                We need to traverse the Patricia trie for every character in the
+                hash. We start from <code>9</code> which is the first character
+                in our hash.<br>
+                We take the item in index 9 (10th item) of the root Patricia
+                node, which is:<br>
+                <code>87d63dddcfce8ebdb184b440846dc9833ce26aa29e035b669b6835b0146a6eee</code><br>
+                We then query that key to get the next Patricia node. The next
+                patricia node is also a branch node, and so we follow it, taking
+                the key from the <code>c</code> place in the Patricia branch
+                node, which is:<br>
+                <code>1b38ff675fa5438b7f183c5fa0625e33451db78c7cbac753a72d100e277519a3</code><br>
+                We keep traversing this way, <code>9</code>, <code>c</code>,
+                <code>8</code>, <code>f</code>, <code>a</code>, etc.
+            </p>
+        </details>
         <main id="notebook">
         </main>
     </body>
