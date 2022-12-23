@@ -1,6 +1,10 @@
 import RLP from 'rlp';
 import { bufferFromHex, arrToJSON } from './util.js';
 
+async function queryLevelDB (key) {
+    return await (await fetch(`http://leveldb.logisol.io/query/${key}`)).json();
+}
+
 class NotebookCell {
     static template = `
         <div style="display:flex">
@@ -41,8 +45,7 @@ class NotebookCell {
     setupEvents () {
         this.elements.button.addEventListener('click', async () => {
             const key = this.elements.key.value;
-            const fetchResponse = await fetch(`http://leveldb.logisol.io/query/${key}`);
-            const response = await fetchResponse.json();
+            const response = await queryLevelDB(key);
             const value = response.blobValue ?? response.value;
             this.elements.value.textContent = value;
             this.elements.decodedValue.textContent = '';
@@ -135,3 +138,11 @@ function createCell (notebook) {
 
     notebook.appendChild(notebookCell.element);
 }
+
+queryLevelDB('4c617374426c6f636b')
+    .then(r => r.value)
+    .then(hash => queryLevelDB(`48${hash}`))
+    .then(r => parseInt(r.value, 16))
+    .then(blockNum => {
+        document.getElementById('lastBlock').textContent = blockNum;
+    });

@@ -68,8 +68,8 @@
                         </a>
                     </li>
                 </ul>
-                This tool works with the Sepolia testnet, but might not always be
-                fully up-to-date. To confirm the results you get from this tool, you
+                This tool works with the Sepolia testnet and is currently updated
+                until block <code id="lastBlock"></code>. To confirm the results you get from this tool, you
                 can cross-check them on <a href="https://sepolia.etherscan.io/" target=_blank>Etherscan</a>.<br>
                 With this tool you can manually explore the LevelDB data by querying
                 specific keys. It's as low-level as possible, since its main
@@ -139,9 +139,10 @@
                         <code><b>68</b>0000000000263d0d<b>6e</b></code>
                     </li>
                     <li>
-                        Then we take the result (<code>9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>) and use the "H"
-                        prefix along with the block number and the hash to find the
-                        block header:
+                        Then we take the result
+                        (<code>9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>)
+                        and use the "h" prefix along with the block number and
+                        the hash to find the block header:
                         <code><b>68</b>0000000000263d0d9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>
                     </li>
                 </ul>
