@@ -335,32 +335,35 @@
           "nonce"
         ]);
       });
-      this.elements.decodeBranchNode.addEventListener("click", async () => {
-        fromRlpToObject([
-          "0",
-          "1",
-          "2",
-          "3",
-          "4",
-          "5",
-          "6",
-          "7",
-          "8",
-          "9",
-          "a",
-          "b",
-          "c",
-          "d",
-          "e",
-          "f",
-          "value"
-        ]);
-      });
-      this.elements.decodeExtensionNode.addEventListener("click", async () => {
-        fromRlpToObject(["path", "nextKey"]);
-      });
-      this.elements.decodeLeafNode.addEventListener("click", async () => {
-        fromRlpToObject(["path", "value"]);
+      this.elements.decodePatriciaNode.addEventListener("click", async () => {
+        const result = rlp();
+        if (result.length === 17) {
+          fromRlpToObject([
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f",
+            "value"
+          ]);
+        } else if (result.length === 2) {
+          if (["0", "1"].includes(result[0].charAt(0))) {
+            fromRlpToObject(["path", "nextKey"]);
+          } else if (["2", "3"].includes(result[0].charAt(0))) {
+            fromRlpToObject(["path", "value"]);
+          }
+        }
       });
       this.elements.decodeAccountNode.addEventListener("click", async () => {
         const result = rlp();
@@ -394,9 +397,7 @@
             <span>Decode:</span>
             <button data-el="decodeRLP">RLP</button>
             <button data-el="decodeBlockHeader">Block Header JSON from RLP</button>
-            <button data-el="decodeBranchNode">Patricia Branch Node</button>
-            <button data-el="decodeExtensionNode">Patricia Extension Node</button>
-            <button data-el="decodeLeafNode">Patricia Leaf Node</button>
+            <button data-el="decodePatriciaNode">Patricia Node</button>
             <button data-el="decodeAccountNode">Account Leaf Node</button>
         </div>
         <pre data-el="decodedValue" style="white-space:pre-wrap;word-break:break-all"></pre>
