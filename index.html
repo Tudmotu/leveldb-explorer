@@ -14,17 +14,28 @@
                 margin: 2rem 0;
             }
         </style>
+        <title>Ethereum LevelDB Explorer</title>
     </head>
     <body style="margin:0 max(100px, 20%);margin-bottom:300px; font-family:sans-serif;">
         <h1>Ethereum LevelDB Explorer</h1>
+        <p>
+            <a href="https://github.com/Tudmotu/leveldb-explorer" target=_blank>Github repository - contributions are welcome</a>
+        </p>
         <details>
-            <summary>Intro</summary>
+            <summary>About this tool</summary>
             <p>
                 The purpose of this tool is to be an educational resource for people
                 trying to learn about Ethereum's data storage. This tool assumes
                 deep understanding of how Ethereum's data looks like. If you ever
-                wondered how Ethereum stores this blockchain data, this tool is for
+                wondered how Ethereum stores its blockchain data, this tool is for
                 you.
+            </p>
+            <p>
+                This tool is based on the Geth implementation using LevelDB.<br>
+                Since the Yellow Paper never provided an actual implementation,
+                different clients implement the Ethereum database differently,
+                but because of the use of very specific mathematical concepts,
+                most clients implement the database very similarly.
             </p>
             <p>
                 Generally speaking, Ethereum saves all of its data in a simple
@@ -66,11 +77,18 @@
                 All the data, both keys and values, is saved in a binary format.
                 This tool accepts and responds with hex-encoded binary data.
             </p>
+            <p>
+                The decoding scheme of the results that come from the LevelDB is
+                beyond the scope of this text, but this tool provides several
+                decoders that let you decode the results in different ways.
+                Different values require different decoders &mdash; make sure
+                you use the appropriate decoder for each piece of data.
+            </p>
         </details>
         <details>
-            <summary>Retrieving Block Data</summary>
+            <summary>LevelDB keys</summary>
             <p>
-                Ethereum stores several top-level, mutable values:
+                Ethereum stores several top-level keys with mutable values:
                 <ul>
                     <li>LastBlock (in hex: <code>4c617374426c6f636b</code>)</li>
                     <li>LastHeader (in hex: <code>4c617374486561646572</code>)</li>
@@ -78,8 +96,8 @@
                     <li>DatabaseVersion (in hex: <code>446174616261736556657273696f6e</code>)</li>
                 </ul>
 
-                Other keys are constructed using different prefixes &amp;
-                suffixes. These are:
+                Keys relating to parsing blocks are constructed using different
+                prefixes &amp; suffixes. These are:
                 <ul>
                     <li><code>68</code> ("h")</li>
                     <li><code>48</code> ("H")</li>
@@ -90,7 +108,19 @@
                     <li><code>42</code> ("B")</li>
                 </ul>
 
-                <h4>Example</h4>
+                The rest of the keys that are stored in the DB are hashes that
+                comprise different Merkle tries. More on that below.
+            </p>
+        </details>
+        <details>
+            <summary>Retrieving Block Data</summary>
+            <p>
+                Retrieving block data requires using the block number and/or
+                hash in order to construct the keys that hold the data that we
+                want.
+            </p>
+            <p>
+                <h4>Example - Retrieving block headers</h4>
                 To find a block hash by its number, you would concatenate the "h"
                 prefix (<code>68</code>) and the "n" suffix (<code>6e</code>). Once
                 you find the block hash, you can retrieve its header data.<br>
@@ -111,20 +141,24 @@
                     <li>
                         Then we take the result (<code>9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>) and use the "H"
                         prefix along with the block number and the hash to find the
-                        block data:
+                        block header:
                         <code><b>68</b>0000000000263d0d9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code>
                     </li>
                 </ul>
-            </p>
-            <p>
-                Decoding the results that come from the LevelDB is beyond the scope
-                of this text, but this tool provides several decoders that let you
-                decode the results in different ways. Different values require
-                different decoders &mdash; make sure you use the right decoder.
+                We can use the "Block Header" decoder to parse the result into
+                the different fields of the header. Of these fields, notable
+                are:
+                <ul>
+                    <li><code>stateRoot</code></li>
+                    <li><code>transactionsRoot</code></li>
+                    <li><code>recieptsRoot</code></li>
+                </ul>
+                These values represent <b>root hashes</b> that let you traverse
+                their respective tries. More on that below.
             </p>
         </details>
         <details>
-            <summary>Traversing the Tries</summary>
+            <summary>Traversing Modified Merkle-Patricia Tries in LevelDB</summary>
             <p>
                 Ethereum uses two kinds of tries to save data in a cryptographically
                 secure yet efficient way:
@@ -132,8 +166,8 @@
                     <li>Modified Patricia Trie</li>
                     <li>Merkle Trie</li>
                 </ul>
-                Explaining these trie structures is beyond the scope of this
-                tool.
+                Explaining these trie structures or why Ethereum utilizes them
+                is beyond the scope of this tool.
             </p>
             <p>
                 These two tries can be constructed from the key/value pairs in the
@@ -144,7 +178,7 @@
                 trying to validate the data, you need to construct the Merkle trie
                 from the keys.
             </p>
-            <h4>Example</h4>
+            <h4>Example - Retrieving account data</h4>
             <p>
                 Let's take block 2,500,039 (<code>2625c7</code> in hex). We can
                 get the hash and header data as explained above. From the header
@@ -153,8 +187,8 @@
             </p>
             <p>
                 The <code>stateRoot</code> is the <b>key</b> for our root nodes.
-                The value of this key in the DB is the root Patricia node, while
-                the key itself is the root Merkle node.<br>
+                The value stored on this key in the DB is the root Patricia
+                node, while the key itself is the root Merkle node.<br>
                 Querying this key will give us an RLP-encoded value that
                 represents 1 of 4 kinds of Patricia nodes:
                 <ul>
@@ -192,7 +226,8 @@
                 At this point, we get the next node's <b>key</b>:<br>
                 <code>8b97f78fa20cfba908a4953654b4fcdc55c94a3df3305548e1e16eb549c19672</code><br>
                 When we query this key, we get a <b>Leaf node</b>. We can
-                identify it because its value starts with <code>3</code>. This
+                identify it because if we decode it with RLP, we get 2 items and
+                the value of the first item starts with <code>3</code>. This
                 type of node is built of two items: the rest of our "path" and
                 the final <b>value</b> of our account.<br>
                 If we take the first item of this node and remove the
@@ -201,11 +236,40 @@
                 If this string seems familiar, it's because it's part of the
                 hash that we were searching for:<br>
                 <code>acf0d<code>af35759515a3118de4ab5ff63ec27518b94b03d601ac7a1e53b3d6603f8</code></code><br>
-                We traversed through <code>f</code>, <code>0</code>,
+                We traversed through <code>a</code>, <code>c</code>,
                 <code>f</code>, <code>0</code>, <code>d</code>, to get to this
                 node, which contains the rest of our hash and our desired value
-                - RLP-encoded account data.
+                - 4 items, encoded with RLP, that represent (in order) the
+                account data:
+                <ol>
+                    <li>Nonce</li>
+                    <li>Balance</li>
+                    <li>storageRoot</li>
+                    <li>codeHash</li>
+                </ol>
+                Looking at the balance, we get <code>b1a2bc2ec50000</code>,
+                which converted to decimal becomes
+                <code>50000000000000000</code>. This balance is in wei, so it's
+                0.05 eth. We can confirm on <a href="https://sepolia.etherscan.io/balancecheck-tool?a=0x3810d4c7eb88dd66ab9be39a5f567cf77ff9f8b7" target=_blank>Etherscan</a> that at block height
+                2,500,039, address <code>0x3810d4c7eB88dd66ab9bE39A5F567Cf77fF9f8B7</code>
+                had 0.05 eth in its balance.
             </p>
+            <p>
+                The same technique of traversing the state trie can be used for
+                traversing the transactions trie or the receipts trie.
+            </p>
+        </details>
+        <details>
+            <summary>Contract Storage</summary>
+            <p>Coming soon</p>
+        </details>
+        <details>
+            <summary>Transactions &amp; receipts</summary>
+            <p>Coming soon</p>
+        </details>
+        <details>
+            <summary>Logs</summary>
+            <p>Coming soon</p>
         </details>
         <main id="notebook">
         </main>
