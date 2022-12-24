@@ -13,6 +13,9 @@
                 border: solid 1px #aaa;
                 margin: 2rem 0;
             }
+            [data-tbd] {
+                color:#aaa;
+            }
         </style>
         <title>Ethereum LevelDB Explorer</title>
     </head>
@@ -236,7 +239,7 @@
                 <code>af35759515a3118de4ab5ff63ec27518b94b03d601ac7a1e53b3d6603f8</code><br>
                 If this string seems familiar, it's because it's part of the
                 hash that we were searching for:<br>
-                <code>acf0d<code>af35759515a3118de4ab5ff63ec27518b94b03d601ac7a1e53b3d6603f8</code></code><br>
+                <code>acf0d<b>af35759515a3118de4ab5ff63ec27518b94b03d601ac7a1e53b3d6603f8</b></code><br>
                 We traversed through <code>a</code>, <code>c</code>,
                 <code>f</code>, <code>0</code>, <code>d</code>, to get to this
                 node, which contains the rest of our hash and our desired value
@@ -260,15 +263,15 @@
                 traversing the transactions trie or the receipts trie.
             </p>
         </details>
-        <details>
+        <details data-tbd>
             <summary>Contract Storage</summary>
             <p>Coming soon</p>
         </details>
-        <details>
+        <details data-tbd>
             <summary>Transactions &amp; receipts</summary>
             <p>Coming soon</p>
         </details>
-        <details>
+        <details data-tbd>
             <summary>Logs</summary>
             <p>Coming soon</p>
         </details>

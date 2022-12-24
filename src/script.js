@@ -14,8 +14,8 @@ class NotebookCell {
         <pre data-el="value" style="white-space:pre-wrap;word-break:break-all"></pre>
         <div style="display:flex">
             <span>Decode:</span>
-            <button data-el="decodeRLP">RLP</button>
-            <button data-el="decodeBlockHeader">Block Header JSON from RLP</button>
+            <button data-el="decodeRLP">Basic RLP</button>
+            <button data-el="decodeBlockHeader">Block Header</button>
             <button data-el="decodePatriciaNode">Patricia Node</button>
             <button data-el="decodeAccountNode">Account Leaf Node</button>
         </div>
@@ -111,9 +111,7 @@ class NotebookCell {
             const decoded = RLP.decode(buf);
             const account = arrToJSON(decoded);
             const data = {
-                key: result[0],
-                rawValue: value,
-                rlpDecodedValue: account,
+                remainingPath: result[0],
                 accountDetails: {
                     nonce: account[0],
                     balance: account[1],
