@@ -122,8 +122,8 @@
                 hash in order to construct the keys that hold the data that we
                 want.
             </p>
+            <h4>Example - Retrieving block headers</h4>
             <p>
-                <h4>Example - Retrieving block headers</h4>
                 To find a block hash by its number, you would concatenate the "h"
                 prefix (<code>68</code>) and the "n" suffix (<code>6e</code>). Once
                 you find the block hash, you can retrieve its header data.<br>
@@ -263,9 +263,132 @@
                 traversing the transactions trie or the receipts trie.
             </p>
         </details>
-        <details data-tbd>
+        <details>
             <summary>Contract Storage</summary>
-            <p>Coming soon</p>
+            <p>
+                In order to understand how contract state is stored in the DB, we
+                need to look at how the EVM handles contract state. This text
+                assumes good understanding of how the EVM works and what
+                opcodes are. Explaining these concepts is out-of-scope.<br>
+                One more important thing to note: different languages (Solidity,
+                Vyper, etc) compile into different bytecode. The process
+                described here is based on how Solidity implements its compiler,
+                but most other EVM languages mimic the same behavior.
+                Some information about Solidity's scheme is presented in their
+                documentation:<br>
+                <a href="https://docs.soliditylang.org/en/v0.8.17/internals/layout_in_storage.html" target=_blank>https://docs.soliditylang.org/en/v0.8.17/internals/layout_in_storage.html</a>
+            </p>
+            <p>
+                To store contract state in the EVM, we use an opcode called
+                <code>SSTORE</code>. The <code>SSTORE</code> opcode has two
+                operands: a <code>slot</code> and a 256-bit array to be stored.
+                The <code>slot</code> is a <code>uint256</code>. When a contract
+                is trying to store some data, it invokes the <code>SSTORE</code>
+                opcode with the slot number it wants to write into.<br>
+                When you compile a Solidity contract, Solidity transforms it
+                into bytecode. When you write to variable, Solidity translates
+                its position in the code into a slot number. So the first
+                variable goes into slot <code>0</code>, the second goes into
+                slot <code>1</code>, etc.
+            </p>
+            <p>
+                Let's look at a simplified example:
+                <pre>
+contract Example {
+    uint256 a = 123;
+}
+                </pre>
+                This contract will compile into something roughly equivalent of
+                <code>sstore(0, 123)</code>.<br>
+                Important to note that the variable name is meaningless when
+                referencing data inside Ethereum's LevelDB storage. The only
+                thing that matters is its position, from which we can derive its
+                slot.
+            </p>
+            <p>
+                Now let's get back to LevelDB. So how can we access this data
+                from LevelDB?<br>
+                When the EVM processes <code>SSTORE</code>, it's actually
+                writing into LevelDB in the background. For every
+                <code>SSTORE</code> operation, the EVM translates the slot into
+                a LevelDB key where it will store the value.<br>
+                Solidity supports 5 types of data structures:
+                <ul>
+                    <li>Fixed-size values (numbers, addresses)</li>
+                    <li>Fixed-size Arrays (including 31-byte strings)</li>
+                    <li>Dynamic Arrays (including long strings)</li>
+                    <li>Mappings</li>
+                    <li>Structs</li>
+                </ul>
+                Each of these data structures is saved using a slightly
+                different scheme. We will go over how some of these are saved
+                using examples.
+            </p>
+            <p>
+                To retrieve a storage slot from LevelDB, we need to use both our
+                account / contract address and the slot we want to retrieve.
+            </p>
+            <h4>Example 1: Read the "name" of an ERC20</h4>
+            <p>
+                Let's look at contract
+                <code>0x5fb282df60a3264c06b2cb36c74d0fd23d727f82</code>. It's an
+                ERC20 contract that follows the OpenZeppelin implementation.
+                Looking <a href="https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol#L35" target=_blank>at the code</a> we can see the
+                <code>name</code> variable is fourth, meaning it will be stored
+                in slot <code>3</code> (0-based index).<br>
+                We now retrieve the account details for this contract in the
+                manner described previously. We will use block 2,505,997 as our
+                head. Its block header can be found here:<br>
+                <code>680000000000263d0d9d32afbe77c7d105253b4ed7750caf23063352936ce357b89a9dd54c9fa24ab1</code><br>
+                We take the state root and find the account details as we did
+                previously. The keccak256 of the address is:<br>
+                <code>c6c986aabcc27ea73df5b336048692ab9cab96645861b869da7b6935a1aa29ab</code><br>
+                We traverse the <code>stateRoot</code> trie same as before,
+                until we reach the leaf node for this account:<br>
+                <code>f12c6be1635c47f9a9aaeef51429e19bf43bcde0fe1ee1894b331dd68e7cab74</code><br>
+                From that we extract the <code>storageRoot</code> for the
+                account. This is a Merkle-Patricia root, and we can traverse it
+                like any other Merkle-Patricia Trie:<br>
+                <code>df20e5cf9e6aef54d16c6123d87957fe1c7c591a82cb03073432ec7375c65648</code><br>
+            </p>
+            <p>
+                Now we can find our storage slots. To find slots, we take their
+                index and find that index on the Patricia trie, starting from
+                the <code>storageRoot</code>.<br>
+                We know the "name" variable is stored in slot <code>3</code>.
+                Slot numbers are always padded to 32 bytes and then hased, so
+                we take the padded number:<br>
+                <code>0000000000000000000000000000000000000000000000000000000000000003</code><br>
+                Hash it with keccak256:<br>
+                <code>c2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b</code><br>
+                And traverse the <code>storageRoot</code> trie to find that key.
+                After traversing <code>c</code>, <code>2</code>, <code>5</code>,
+                we get to the leaf node that containes our value:<br>
+                <code>0b49a92e9302e8d45d0ce6acd86eee8ea4a83fc447bc7f9e629febb197ece43d</code><br>
+            </p>
+            <p>
+                We can now see the value stored in slot <code>3</code>, but it's
+                encoded:<br>
+                <code>a04255534420546f6b656e00000000000000000000000000000000000000000014</code><br>
+                Solidity encodes strings that are 31-bytes or smaller directly in
+                a single slot. The first byte (in this example, <code>a0</code>)
+                we ignore. The <b>last</b> byte (in this example,
+                <code>14</code>) encodes the length of string. <code>14</code>
+                is hex, converted to decimal it's <code>20</code>. So our string
+                are the 20 digits following the <code>a0</code> byte, and then
+                those bits are our ASCII/UTF encoded string:
+                <code>4255534420546f6b656e</code><br>
+                We can use Javascript to decode it (any other language can also
+                work):<br>
+                <pre>
+'4255534420546f6b656e'.match(/.{1,2}/g).map(v =&gt; String.fromCharCode(parseInt(v, 16))).join('')
+                </pre>
+                Or in Node.js:
+                <pre>
+Buffer.from('4255534420546f6b656e', 'hex').toString('utf8')
+                </pre>
+                And we get: <code>BUSD Token</code><br>
+            </p>
         </details>
         <details data-tbd>
             <summary>Transactions &amp; receipts</summary>
