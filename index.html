@@ -26,28 +26,50 @@
         </p>
         <details>
             <summary>About this tool</summary>
-            <p>
+            <p id=a>
                 The purpose of this tool is to be an educational resource for people
-                trying to learn about Ethereum's data storage. This tool assumes
-                deep understanding of how Ethereum's data looks like. If you ever
-                wondered how Ethereum stores its blockchain data, this tool is for
-                you.
+                trying to learn about Ethereum's data storage. We assume
+                good understanding of how Ethereum's data looks like - block
+                headers, accounts, storage slots, etc. If you ever wondered how
+                Ethereum stores all of this data, this tool is for you.
+            </p>
+            <p>
+                The text here is meant to help guide you through some common
+                use-cases for exploring Ethereum's low-level data structures. It
+                is recommended to follow along with the examples using the query
+                tool. The best way to understand these data structures is with
+                visual, real-world examples.<br>
+                The sections are ordered in a specific way and may depend on
+                each other. For example, avoid trying to access storage slots
+                before you understand how to traverse a patricia trie.
             </p>
             <p>
                 This tool is based on the Geth implementation using LevelDB.<br>
                 Since the Yellow Paper never provided an actual implementation,
                 different clients implement the Ethereum database differently,
                 but because of the use of very specific mathematical concepts,
-                most clients implement the database very similarly.
+                most clients implement the database very similarly.<br>
+                This tool works with the Sepolia testnet and is currently updated
+                until block <code id="lastBlock"></code>. To confirm the results you get from this tool, you
+                can cross-check them on <a href="https://sepolia.etherscan.io/" target=_blank>Etherscan</a>.<br>
+                With this tool you can manually explore the LevelDB data by querying
+                specific keys. It's as low-level as possible, since its main
+                purpose is educational.<br>
+                All the data, both keys and values, is saved in a binary format.
+                This tool accepts and responds with hex-encoded binary data.<br>
+                The encoding scheme of the results that come from the LevelDB is
+                beyond the scope of this text, but this tool provides several
+                decoders that let you decode the results in different ways.
+                Different values require different decoders &mdash; make sure
+                you use the appropriate decoder for each piece of data.
             </p>
+            <h4>Additional Resources</h4>
             <p>
-                Generally speaking, Ethereum saves all of its data in a simple
-                key/value store. But how would you save complex data structures such
-                as blocks and transactions in a flat key/value store? Ethereum employes
-                several different serialization techniques in order to achieve
-                this.<br>
-                For more information about these data structures, refer to the
-                following resources:
+                Very few resources exist on this topic, which is the main reason
+                for building this tool. Still, some resources exist and I
+                encourage you to read them as well. This is not an easy topic,
+                but you can learn it.<br>
+                Here are some resources I found useful:<br>
                 <ul>
                     <li>
                         <a
@@ -76,21 +98,8 @@
                         </a>
                     </li>
                 </ul>
-                This tool works with the Sepolia testnet and is currently updated
-                until block <code id="lastBlock"></code>. To confirm the results you get from this tool, you
-                can cross-check them on <a href="https://sepolia.etherscan.io/" target=_blank>Etherscan</a>.<br>
-                With this tool you can manually explore the LevelDB data by querying
-                specific keys. It's as low-level as possible, since its main
-                purpose is educational.<br>
-                All the data, both keys and values, is saved in a binary format.
-                This tool accepts and responds with hex-encoded binary data.
-            </p>
-            <p>
-                The decoding scheme of the results that come from the LevelDB is
-                beyond the scope of this text, but this tool provides several
-                decoders that let you decode the results in different ways.
-                Different values require different decoders &mdash; make sure
-                you use the appropriate decoder for each piece of data.
+                To go deeper than that, unfortuantely, the only resource is the
+                Geth source code.
             </p>
         </details>
         <details>
@@ -444,20 +453,18 @@ contract Example {
                 What Solidity does is it constructs a key from the address and
                 the slot, using the following formula:<br>
                 <pre>
-storageSlotKey = keccak256(abi.encode(mappingKey, variableSlotPosition))
+storageSlotNumber = keccak256(abi.encode(mappingKey, variableSlotPosition))
                 </pre>
                 Where:
                 <ul>
                     <li>
-                        <code>mappingKey</code> is the key we are searching for,
-                        in our example it's the address
-                        <code>8ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d</code>.
+                        <code>mappingKey</code> is the key we are searching for.
+                        In our example it's the address
+                        <code>8ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d</code>
                     </li>
                     <li>
                         <code>variableSlotPosition</code> is the position of the
-                        mapping variable in the code. This is its "original
-                        slot", if it was a scalar value.<br>
-                        Important to note that this slot number is not hashed.
+                        mapping variable in the code. In our case, <code>0</code>
                     </li>
                     <li>
                         <code>abi.encode()</code> is the standard EVM ABI
@@ -477,12 +484,11 @@ storageSlotKey = keccak256(abi.encode(mappingKey, variableSlotPosition))
                 <code>0000000000000000000000008ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d0000000000000000000000000000000000000000000000000000000000000000</code><br>
                 And we run them through keccak256, to get:<br>
                 <code>a194304cfaa67b7f4640d773719472e36ea5de258553109420ff3fb659aa3d1c</code><br>
-                Now this is our storage slot for the balance of address
+                Now this is our storage slot <b>number</b> for the balance of address
                 <code>0x8ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d</code>.<br>
-                <b>NOTE:</b> It's important to note now that this is considered
-                our slot <b>number</b>. To find our slot <b>key</b>, we hash
-                this number like we did with our slot <b>3</b>. The result will
-                be:
+                <b>NOTE:</b> This is our slot <b>number</b>. To find our slot
+                <b>key</b>, we hash this number like we did with slot number
+                <b>3</b>. The result will be:
                 <code>ed98752026e9e727d97d787c433a482f543a72cfc1e944ffc2a72e460ebb2c4a</code><br>
                 We can now traverse the <code>storageRoot</code> trie to find the balance
                 for the address. After traversing <code>e</code> and
