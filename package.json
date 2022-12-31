@@ -21,6 +21,7 @@
     "@ethereumjs/block": "4.1.0",
     "esbuild": "0.16.10",
     "http-server": "14.1.1",
+    "js-sha3": "0.8.0",
     "rlp": "3.0.0"
   }
 }

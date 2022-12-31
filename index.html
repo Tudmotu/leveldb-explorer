@@ -70,6 +70,11 @@
                             Understanding Trie Databases in Ethereum
                         </a>
                     </li>
+                    <li>
+                        <a href="https://coinsbench.com/solidity-layout-and-access-of-storage-variables-simply-explained-1ce964d7c738" target=_blank>
+                            Solidity layout and access of storage state variables simply explained
+                        </a>
+                    </li>
                 </ul>
                 This tool works with the Sepolia testnet and is currently updated
                 until block <code id="lastBlock"></code>. To confirm the results you get from this tool, you
@@ -314,19 +319,23 @@ contract Example {
                 a LevelDB key where it will store the value.<br>
                 Solidity supports 5 types of data structures:
                 <ul>
-                    <li>Fixed-size values (numbers, addresses)</li>
-                    <li>Fixed-size Arrays (including 31-byte strings)</li>
-                    <li>Dynamic Arrays (including long strings)</li>
+                    <li>Fixed-size values (numbers, addresses, short strings)</li>
+                    <li>Fixed-size Arrays</li>
+                    <li>Dynamic Arrays</li>
                     <li>Mappings</li>
                     <li>Structs</li>
                 </ul>
                 Each of these data structures is saved using a slightly
                 different scheme. We will go over how some of these are saved
-                using examples.
+                using examples, but for a comprehensive guide to all data
+                structures, consult the resources linked at the top.
             </p>
             <p>
-                To retrieve a storage slot from LevelDB, we need to use both our
-                account / contract address and the slot we want to retrieve.
+                To retrieve a storage slot from LevelDB, we need to use our
+                account / contract address, retrieve the
+                <code>storageRoot</code> of the account and then derive the slot
+                we want to retrieve from its position in the code and the type
+                of data structure it holds.
             </p>
             <h4>Example 1: Read the "name" of an ERC20</h4>
             <p>
@@ -388,6 +397,107 @@ contract Example {
 Buffer.from('4255534420546f6b656e', 'hex').toString('utf8')
                 </pre>
                 And we get: <code>BUSD Token</code><br>
+            </p>
+            <h4>Example 2: Get the ERC20 balance of an address</h4>
+            <p>
+                Mappings and other dynamic types are a bit more complicated to
+                retrieve from the storage, becuase of how Solidity allocates
+                slots for dynamic types.<br>
+                Every slot in the EVM is 256-bits long. This means that if you
+                want to save more than 256 bits, you need to come up with a
+                scheme that would let you save a single variable in multiple
+                slots. For fixed-size large values, a simple scheme / layout
+                would be to stack the slots. Let's take as an example a
+                fixed-size array:<br>
+                <pre>
+contract Example {
+    uint[2] list;
+}
+                </pre>
+                While we are defining a single variable, it will actually take
+                up two slots. <code>list[0]</code> would be located in slot
+                <code>0</code> while <code>list[1]</code> will be located in
+                slot <code>1</code>. Simple enough. Solidity uses something
+                similar (remember: storage schemes / layouts are
+                compiler-specific).<br>
+                Mappings and other dynamic types are more problematic because
+                they could theoretically grow infinitely, so we can't reserve
+                slots for them. For that, Solidity uses a different layout
+                model. Instead of packing the variables one after the other,
+                Solidity uses a pseudo-random slot number that it generates from
+                the <b>position</b> of the variable and the <b>mapping key</b>.<br>
+            </p>
+            <p>
+                Let's continue with our BUSD Token contract from above. We know
+                that it keeps its <code>_balances</code> variable in slot
+                <code>0</code>. But if we search for slot <code>0</code>, which has
+                the keccak hash:<br>
+                <code>290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563</code><br>
+                We can't find it in the Patricia trie. That's because Solidity
+                doesn't save anything in that slot. Instead, we need to look for
+                the slot of a specific key inside the mapping. Solidity
+                generates a different slot for every key in the mapping. To find
+                the slot where the balance of an address is kept, combine the
+                slot of the mapping and the key (i.e. the address) we are
+                looking for. Let's take this address as an example:
+                <code>0x8ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d</code>.<br>
+                What Solidity does is it constructs a key from the address and
+                the slot, using the following formula:<br>
+                <pre>
+storageSlotKey = keccak256(abi.encode(mappingKey, variableSlotPosition))
+                </pre>
+                Where:
+                <ul>
+                    <li>
+                        <code>mappingKey</code> is the key we are searching for,
+                        in our example it's the address
+                        <code>8ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d</code>.
+                    </li>
+                    <li>
+                        <code>variableSlotPosition</code> is the position of the
+                        mapping variable in the code. This is its "original
+                        slot", if it was a scalar value.<br>
+                        Important to note that this slot number is not hashed.
+                    </li>
+                    <li>
+                        <code>abi.encode()</code> is the standard EVM ABI
+                        encoding function, which mostly means we need to pad
+                        every paramer to 32 bytes.
+                    </li>
+                </ul>
+                So, in order to derive the actual slot number for our data, we
+                take the key we are searching for:<br>
+                <code>8ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d</code><br>
+                Pad it to 32 bytes:<br>
+                <code>0000000000000000000000008ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d</code><br>
+                We then take the slot where the mapping variable is positioned,
+                which is <code>0</code> and pad it to 32 bytes:<br>
+                <code>0000000000000000000000000000000000000000000000000000000000000000</code><br>
+                We concatenate these two:<br>
+                <code>0000000000000000000000008ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d0000000000000000000000000000000000000000000000000000000000000000</code><br>
+                And we run them through keccak256, to get:<br>
+                <code>a194304cfaa67b7f4640d773719472e36ea5de258553109420ff3fb659aa3d1c</code><br>
+                Now this is our storage slot for the balance of address
+                <code>0x8ab7b1954fbe6c39b146bffd2fb1e8c38138fb4d</code>.<br>
+                <b>NOTE:</b> It's important to note now that this is considered
+                our slot <b>number</b>. To find our slot <b>key</b>, we hash
+                this number like we did with our slot <b>3</b>. The result will
+                be:
+                <code>ed98752026e9e727d97d787c433a482f543a72cfc1e944ffc2a72e460ebb2c4a</code><br>
+                We can now traverse the <code>storageRoot</code> trie to find the balance
+                for the address. After traversing <code>e</code> and
+                <code>d</code>, we reach a leaf node that contains our value:<br>
+                <code>891b1ae4d6e2ef500000</code><br>
+                Which comes out to <code>500 * 10^18</code> in decimal, or 500 "BUSD
+                tokens".
+            </p>
+            <p>
+                Side note: maybe now you understand why it's impossible to
+                iterate over mappings in Solidity &mdash; the keys are not saved
+                anywhere in their raw form, only as hashed values which cannot
+                be reverse-engineered into the original keys. To search for a
+                value of a mapping, you must know the original key you are
+                looking for.
             </p>
         </details>
         <details data-tbd>

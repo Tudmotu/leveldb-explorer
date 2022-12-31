@@ -1,3 +1,4 @@
+import { keccak256 } from 'js-sha3';
 import RLP from 'rlp';
 import { bufferFromHex, arrToJSON } from './util.js';
 
