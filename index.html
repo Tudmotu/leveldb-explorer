@@ -1,8 +1,18 @@
 <!doctype html>
 <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <script src="./script.js" type="module"></script>
         <style>
+            :root {
+                font-family:sans-serif;
+            }
+            @media (min-width: 801px) {
+                body {
+                    margin:0 max(100px, 20%);
+                    margin-bottom:300px;
+                }
+            }
             code {
                 background:#ddd;
                 padding:0 4px;
@@ -19,7 +29,7 @@
         </style>
         <title>Ethereum LevelDB Explorer</title>
     </head>
-    <body style="margin:0 max(100px, 20%);margin-bottom:300px; font-family:sans-serif;">
+    <body>
         <h1>Ethereum LevelDB Explorer</h1>
         <p>
             <a href="https://github.com/Tudmotu/leveldb-explorer" target=_blank>Github repository - contributions are welcome</a>
