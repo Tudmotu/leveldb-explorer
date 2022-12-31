@@ -488,7 +488,9 @@ storageSlotKey = keccak256(abi.encode(mappingKey, variableSlotPosition))
                 for the address. After traversing <code>e</code> and
                 <code>d</code>, we reach a leaf node that contains our value:<br>
                 <code>891b1ae4d6e2ef500000</code><br>
-                Which comes out to <code>500 * 10^18</code> in decimal, or 500 "BUSD
+                Removing the first byte gives us:
+                <code>1b1ae4d6e2ef500000</code>, which comes out to
+                <code>500*10^18</code> in decimal, or 500 "BUSD
                 tokens".
             </p>
             <p>
