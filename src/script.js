@@ -3,7 +3,7 @@ import RLP from 'rlp';
 import { bufferFromHex, arrToJSON } from './util.js';
 
 async function queryLevelDB (key) {
-    return await (await fetch(`http://leveldb.logisol.io/query/${key}`)).json();
+    return await (await fetch(`https://leveldb-api.logisol.io/query/${key}`)).json();
 }
 
 class NotebookCell {
