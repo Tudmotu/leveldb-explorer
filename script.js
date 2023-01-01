@@ -945,6 +945,7 @@
         const value = response.blobValue ?? response.value;
         this.elements.value.textContent = value;
         this.elements.decodedValue.textContent = "";
+        this.elements.controls.hidden = false;
         if (this._resultCbInvoked !== true) {
           this._resultCbInvoked = true;
           this._resultCb();
@@ -1043,7 +1044,7 @@
             <button data-el="button" style="flex:0 0 auto" >Query</button>
         </div>
         <pre data-el="value" style="white-space:pre-wrap;word-break:break-all"></pre>
-        <div style="display:flex">
+        <div data-el=controls style="display:flex" hidden>
             <span>Decode:</span>
             <button data-el="decodeRLP">Basic RLP</button>
             <button data-el="decodeBlockHeader">Block Header</button>
