@@ -918,54 +918,8 @@
 
   // src/script.js
   async function queryLevelDB(key) {
-    return await (await fetch(`http://leveldb.logisol.io/query/${key}`)).json();
+    return await (await fetch(`https://leveldb-api.logisol.io/query/${key}`)).json();
   }
-  window.basicStorageSlotKeys = (() => {
-    const keys = {};
-    for (let i = 0; i < 100; i++) {
-      const index = i.toString(16).padStart(64, "0");
-      const indexAsBuffer = Uint8Array.from(index.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
-      keys[(0, import_js_sha3.keccak256)(indexAsBuffer)] = index;
-    }
-    return keys;
-  })();
-  window.exhaustStorageTrie = async (storageRoot, currentPath = "", slots = {}) => {
-    const rootNode = await queryLevelDB(storageRoot);
-    const buf = bufferFromHex(rootNode.value);
-    const decoded = import_rlp2.default.decode(buf);
-    const arr = arrToJSON(decoded);
-    if (arr.length === 17) {
-      for (let [i, key] of arr.slice(0, 16).entries()) {
-        if (key === "")
-          continue;
-        const digit = i.toString(16);
-        await window.exhaustStorageTrie(key, `${currentPath}${digit}`, slots);
-      }
-    } else if (arr.length === 2) {
-      let flag = arr[0].slice(0, 1);
-      let trailingPath;
-      if (["1", "0"].includes(flag)) {
-        if (flag === "0")
-          trailingPath = arr[0].slice(1);
-        else
-          trailingPath = arr[0].slice(2);
-        const nextKey = arr[1];
-        await window.exhaustStorageTrie(nextKey, `${currentPath}${trailingPath}`, slots);
-      } else if (["2", "3"].includes(flag)) {
-        if (flag === "3")
-          trailingPath = arr[0].slice(1);
-        else
-          trailingPath = arr[0].slice(2);
-        const finalPath = `${currentPath}${trailingPath}`;
-        const decodedSlot = basicStorageSlotKeys[finalPath];
-        const bufVal = bufferFromHex(arr[1]);
-        const decodedVal = import_rlp2.default.decode(bufVal);
-        const arrVal = arrToJSON(decodedVal);
-        slots[decodedSlot ?? finalPath] = arrVal;
-      }
-    }
-    return slots;
-  };
   var _NotebookCell = class {
     constructor() {
       this.element = document.createElement("div");
